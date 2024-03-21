@@ -23,9 +23,20 @@ overlap = samples_per_segment - samples_per_interval;
 % Generate the spectrogram
 % Arguement 1: Hamming window function smoothens the movement from one
 % segment to another
-figure(1)
-spectrogram(y, hamming(samples_per_segment), overlap, samples_per_segment, Fs_orig, 'yaxis');
+% figure(1)
+% spectrogram(y, hamming(samples_per_segment), overlap, samples_per_segment, Fs_orig, 'yaxis');
+% title('Spectrogram of attention.wav');
+% disp(s);
+
+% Calculate the mixture spectrogram
+[S, F, T] = spectrogram(y, hamming(samples_per_segment), overlap, samples_per_segment, Fs_orig, 'yaxis');
+
+% Display the spectrogram
+figure;
+imagesc(T, F, 10*log10(abs(S))); % Plot the spectrogram in dB scale
+axis xy; % Flip the y-axis direction to match the conventional axis orientation
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
 title('Spectrogram of attention.wav');
-disp(s);
 
 
