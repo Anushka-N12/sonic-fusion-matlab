@@ -64,18 +64,18 @@ bs_r_n = bs_r / bs_r(1);
 disp('Size of final beat spectrum is');
 bs_size = size(bs_r_n);
 disp(bs_size);
+bs_real = real(bs_r_n);
 
 % Plot the final beat spectrum
 t = 1:bs_size;
 figure;
-plot(t, bs_r_n);
+plot(t, bs_real);
 xlabel('Index');
 ylabel('Value');
 title('Final Beat Spectrum');
 hold on;
 
 % Find peaks in the beat spectrum
-bs_real = real(bs_r_n);
 [peaks, locs] = findpeaks(bs_real);
 disp("No. of local peaks found is");
 disp(size(peaks));
@@ -84,7 +84,8 @@ disp(size(peaks));
 % Method not specified in paper
 % Making an assumption that all clips will be above 5s
 dur = length(y)/Fs; % total duration of audio signal in s
-s_per_five = round(bs_size(1)/dur*5);  % No. of rows in 5s
+x = 5;
+s_per_xs = round(bs_size(1)/dur*x);  % No. of rows in x s
 size_ref = bs_size(1);
 repeating_peaks = zeros(bs_size(1)+1);
 repeating_locs = zeros(bs_size(1)+1);
@@ -93,7 +94,7 @@ allocated_till = 1;
 for i = 1:size(peaks)
     peak = peaks(i);
     loc = locs(i);
-    limit = loc + s_per_five;
+    limit = loc + s_per_xs;
     if ~ismember(peak, repeating_peaks)
         p_size = size(peaks);
         if p_size(1) == j
@@ -148,30 +149,34 @@ hold off; % Release the hold on the plot
 % Calculate the time difference between consecutive peaks
 % Dealing with first peak only for now
 k = 1;
-repeating_period = loc_repeated_at(k)-repeating_locs(k);
+repeating_c = loc_repeated_at(k)-repeating_locs(k);
+disp("Repeating set of columns");
+disp(repeating_c);
 % periods = diff(locs);
-
-% Determine the repeating period
-bs_per_five = round(bs_size(1)/dur);  % No. of rows in 1s
-
-% Use the repeating period to evenly time-segment the mixture spectrogram
-% num_segments = floor(size(S, 2) / repeating_period);
-% segment_length = repeating_period;
+bs_per_1s = round(bs_size(2)/dur);  % No. of columns in 1s
+segment_length = repeating_c;
+% Calculate the number of segments based on the repeating period
+num_segments = floor(S_size(2) / segment_length);
+disp("Number is segments being created is");
+disp(num_segments);
 
 % Initialize segmented spectrogram matrix
-% segmented_S = zeros(size(S, 1), num_segments, segment_length);
+% Note the matlab definition is like M(x,y,z), unlike numpy M(z,x,y)
+segmented_S = zeros(S_size(1), segment_length, num_segments);
+disp('Size of segmented_S is');
+disp(size(segmented_S));
 
 % Segment the mixture spectrogram
-% for i = 1:num_segments
-%     start_index = (i - 1) * repeating_period + 1;
-%     end_index = start_index + segment_length - 1;
-%     segmented_S(:, i, :) = S(:, start_index:end_index);
-% end
+for i = 1:num_segments
+    start_index = (i - 1) * segment_length + 1;
+    end_index = start_index + segment_length - 1;
+    segment = S(:, start_index:end_index);
+    segmented_S(:, :, i) = segment;
+end
 
-% Process each segment as needed
-
-% Continue with further processing or analysis
-
+repeated_seg = median(segmented_S, 3);
+disp('A segment is of size');
+disp(size(repeated_seg));
 
 
 
