@@ -12,6 +12,9 @@ if size(y, 2) > 1
     y = y(:, 1); % Take the first channel if it's a stereo signal
 end
 
+disp('Original signal size');
+disp(size(y));
+
 time_interval = 0.04;  % Time interval in seconds
 samples_per_segment = 2048;
 Fs = 44100;  % Sampling frequency
@@ -178,6 +181,78 @@ repeated_seg = median(segmented_S, 3);
 disp('A segment is of size');
 disp(size(repeated_seg));
 
+repeating_S = zeros(S_size);
+for i = 1:num_segments
+    start_index = (i - 1) * segment_length + 1;
+    end_index = start_index + segment_length - 1;
+    repeating_S(:, start_index:end_index) = min(segmented_S(:,:,i), repeated_seg);
+end
+
+% Display the spectrogram
+figure;
+imagesc(T, F, 10*log10(abs(repeating_S))); % Plot the spectrogram in dB scale
+axis xy; % Flip the y-axis direction to match the conventional axis orientation
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
+title('Mixed Spectrogram of audio file');
+
+% Calculate the time-frequency mask
+mask = repeating_S ./ S;
+disp('Mask shape');
+disp(size(mask));
+
+% Normalize the mask values to range from 0 to 1
+% Find the maximum and minimum values of the mask array
+max_val = max(mask(:));
+min_val = min(mask(:));
+% Normalize using above
+mask = (mask - min_val) / (max_val - min_val);
+% Clip the mask values to ensure they are within the range [0, 1]
+mask(mask < 0) = 0;
+mask(mask > 1) = 1;
+
+% Apply the mask to the original mixture spectrogram
+music_spectrogram = mask .* S;
+disp("Final spectrogram size");
+disp(size(music_spectrogram));
+
+% Check for NaN and Infinite values
+nan_indices = isnan(music_spectrogram);
+inf_indices = isinf(music_spectrogram);
+
+% Replace NaN and Infinite values with zeros
+music_spectrogram(nan_indices) = 0;
+music_spectrogram(inf_indices) = 0;
+
+% Display the spectrogram
+figure;
+imagesc(T, F, 10*log10(abs(repeating_S))); % Plot the spectrogram in dB scale
+axis xy; % Flip the y-axis direction to match the conventional axis orientation
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
+title('Final music spectrogram');
+
+% Inverse Short-Time Fourier Transform (ISTFT) to get the music signal
+music_signal = istft(music_spectrogram, 'Window', hamming(samples_per_segment), 'OverlapLength', overlap, 'FFTLength', samples_per_segment, 'FrequencyRange', 'onesided');
+disp('Size of final music signal');
+disp(size(music_signal));
+
+%  rest of the reconstruction and audio file writing code
+music_signal_n = music_signal / max(abs(music_signal)); % Normalize the signal
+
+% Save Music Signal
+music_filepath = "C:\Users\anush\OneDrive\Documents\MATLAB\sonic_fusion\music_signal.wav"; % Choose a file name and path
+audiowrite(music_filepath, real(music_signal_n), Fs_orig); % Fs_orig is the original sampling frequency
+
+% % Obtain Voice Signal
+% voice_signal = y - music_signal; % Subtract music signal from the original mixture signal
+% 
+% %  rest of the reconstruction and audio file writing code
+% voice_signal_n = voice_signal / max(abs(voice_signal)); % Normalize the signal
+% 
+% % Save Voice Signal
+% voice_filepath = "voice_signal.wav"; % Choose a file name and path
+% audiowrite(voice_filepath, real(voice_signal_n), Fs_orig); % Fs_orig is the original sampling frequency
 
 
 
