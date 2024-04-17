@@ -117,8 +117,10 @@ for i = 1:size(peaks)
 
             if size(s1,2) == size(s2,2) && strcmp(s1(1,1:floor(size(s1,2)/5)), s2(1,1:floor(size(s2,2)/5)))
                 repeating_peaks(allocated_till) = peak;
-                repeating_locs(allocated_till) = loc;
-                loc_repeated_at(allocated_till) = locs(j);
+                if repeating_locs(allocated_till) == 0
+                    repeating_locs(allocated_till) = loc;
+                end
+                loc_repeated_at(allocated_till) = loc_repeated_at(allocated_till)+1;
                 allocated_till = allocated_till + 1;
                 break
             end
